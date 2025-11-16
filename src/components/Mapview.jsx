@@ -1,27 +1,28 @@
 // src/components/MapView.jsx
 import React from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import MapControls from "./MapControls";
 import FresnelSVG from "./FresnelSVG";
 
+/** tiny helper: grabs the map instance via useMap() and stores it globally */
+function MapSetter() {
+  const map = useMap();
+  // store on window so your existing FresnelSVG can pick it up
+  // this will run once the map context is available
+  React.useEffect(() => {
+    if (map) window._rfMapInstance = map;
+  }, [map]);
+  return null;
+}
+
 /**
  * MapView: renders leaflet map, markers and polylines.
- *
- * Props:
- * - towers, links, activeLink
- * - onMapClick(latlng)
- * - onTryMakeLink(towerId)
- * - onLinkClick(link)
  */
 export default function MapView({ towers = [], links = [], activeLink, onMapClick, onTryMakeLink, onLinkClick }) {
-  function onMapCreated(map) {
-    // store globally for SVG overlay conversions
-    window._rfMapInstance = map;
-  }
-
   return (
     <div style={{ flex: 1, position: "relative" }}>
-      <MapContainer whenCreated={onMapCreated} center={[19.07, 72.87]} zoom={6} style={{ height: "100%", width: "100%" }}>
+      <MapContainer center={[19.07, 72.87]} zoom={6} style={{ height: "100%", width: "100%" }}>
+        <MapSetter />
         <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <MapControls onMapClick={onMapClick} />
 

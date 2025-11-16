@@ -77,9 +77,8 @@ export default function Main() {
     if (activeLink === id) setActiveLink(null);
   }
 
-  async function computeLink(link) {
+   async function computeLink(link) {
     // compute distance, lambda, r_mid and attempt elevation fetch (optional)
-    setActiveLink(link.id);
     const A = towers.find((t) => t.id === link.a);
     const B = towers.find((t) => t.id === link.b);
     if (!A || !B) return;
@@ -99,6 +98,14 @@ export default function Main() {
     const lambda = SPEED_OF_LIGHT / freqHz;
     const r_mid = Math.sqrt((lambda * (dist / 2) * (dist / 2)) / dist);
 
+    // optimistic local update first — ensures Fresnel renders immediately with r_mid
+    setLinks((p) =>
+      p.map((l) => (l.id === link.id ? { ...l, dist, r_mid, lambda } : l))
+    );
+
+    // set active link after we've updated the link with r_mid
+    setActiveLink(link.id);
+
     // optional elevation fetch (best-effort)
     let elevations = null;
     try {
@@ -116,9 +123,14 @@ export default function Main() {
       // ignore elevation errors
     }
 
-    setLinks((p) => p.map((l) => (l.id === link.id ? { ...l, dist, r_mid, lambda, elevations } : l)));
+    // if we got elevations, write them back into the link object (keeps r_mid/dist already set)
+    if (elevations) {
+      setLinks((p) => p.map((l) => (l.id === link.id ? { ...l, elevations } : l)));
+    }
+
     setMessage(`${link.a}↔${link.b} ${formatMeters(dist)} — r_mid ≈ ${r_mid.toFixed(2)} m`);
   }
+
 
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: "system-ui, sans-serif" }}>
